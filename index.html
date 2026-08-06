@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Group 13 &mdash; Event Registration &amp; Ticketing</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0F1220;
+    --surface: #171B2E;
+    --surface-2: #1E2338;
+    --ink: #F5F3ED;
+    --ink-dim: #A9ACC4;
+    --gold: #E8B94A;
+    --gold-dim: #7A6635;
+    --teal: #3FBFA6;
+    --border: #2C3150;
+    --danger: #E2685A;
+    --radius: 14px;
+    font-size: 16px;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ background:var(--bg); color:var(--ink); }
+  body{
+    font-family:'Inter', sans-serif;
+    min-height:100vh;
+    padding:0 0 80px 0;
+  }
+  ::selection{ background:var(--gold); color:#12141f; }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+  .display{ font-family:'Space Grotesk', sans-serif; }
+
+  a{ color:inherit; }
+  button{ font-family:inherit; cursor:pointer; }
+  :focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px 6vw;
+    border-bottom:1px solid var(--border);
+    position:sticky; top:0; z-index:30;
+    background:rgba(15,18,32,0.92);
+    backdrop-filter: blur(8px);
+  }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand-mark{
+    width:30px; height:30px; border-radius:7px;
+    background:linear-gradient(135deg, var(--gold), #f4d68a);
+    display:flex; align-items:center; justify-content:center;
+    color:#161421; font-weight:700; font-family:'Space Grotesk',sans-serif;
+    font-size:15px; flex-shrink:0;
+  }
+  .brand-name{ font-family:'Space Grotesk', sans-serif; font-weight:600; letter-spacing:0.01em; }
+  .brand-sub{ font-size:11px; color:var(--ink-dim); letter-spacing:0.08em; text-transform:uppercase; margin-top:1px;}
+  nav{ display:flex; gap:6px; }
+  .nav-btn{
+    background:transparent; border:1px solid transparent; color:var(--ink-dim);
+    padding:8px 14px; border-radius:20px; font-size:13.5px; font-weight:500;
+    transition:.15s;
+  }
+  .nav-btn:hover{ color:var(--ink); border-color:var(--border); }
+  .nav-btn.active{ color:var(--bg); background:var(--gold); }
+
+  main{ max-width:1080px; margin:0 auto; padding:0 6vw; }
+
+  /* ---------- Hero (ticket stub) ---------- */
+  .hero{
+    margin:56px 0 44px 0;
+    position:relative;
+  }
+  .hero-ticket{
+    display:grid; grid-template-columns: 1fr 220px;
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    background: linear-gradient(120deg, var(--surface), var(--surface-2));
+    overflow:hidden;
+    box-shadow: 0 30px 60px -30px rgba(0,0,0,0.6);
+  }
+  .hero-main{ padding:46px 42px; position:relative; }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:0.12em;
+    color:var(--gold); text-transform:uppercase; margin-bottom:16px; display:block;
+  }
+  .hero h1{
+    font-family:'Space Grotesk', sans-serif; font-size:clamp(30px,4vw,46px);
+    font-weight:700; line-height:1.08; letter-spacing:-0.01em; margin-bottom:16px;
+  }
+  .hero p{ color:var(--ink-dim); font-size:15.5px; max-width:480px; line-height:1.6; }
+  .hero-stub{
+    border-left:1px dashed var(--border);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:10px; padding:20px; position:relative;
+  }
+  .hero-stub::before, .hero-stub::after{
+    content:''; position:absolute; width:22px; height:22px; border-radius:50%;
+    background:var(--bg); left:-11px;
+  }
+  .hero-stub::before{ top:-11px; }
+  .hero-stub::after{ bottom:-11px; }
+  .stub-num{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-dim); letter-spacing:0.1em; }
+  .stub-big{ font-family:'Space Grotesk',sans-serif; font-size:32px; font-weight:700; color:var(--gold); }
+  .stub-label{ font-size:11px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:0.08em; }
+
+  /* ---------- Section heads ---------- */
+  .section-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:22px; }
+  .section-head h2{ font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:600; }
+  .section-head span{ font-size:13px; color:var(--ink-dim); font-family:'IBM Plex Mono',monospace; }
+
+  /* ---------- Event cards ---------- */
+  .events-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:18px; margin-bottom:60px; }
+  .event-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:24px; position:relative; transition:.18s; cursor:pointer;
+    display:flex; flex-direction:column; gap:14px;
+  }
+  .event-card:hover{ border-color:var(--gold-dim); transform:translateY(-2px); }
+  .event-top{ display:flex; justify-content:space-between; align-items:flex-start; }
+  .event-date{
+    font-family:'IBM Plex Mono',monospace; text-align:center; background:var(--surface-2);
+    border:1px solid var(--border); border-radius:8px; padding:8px 10px; flex-shrink:0; min-width:56px;
+  }
+  .event-date .d{ font-size:20px; font-weight:600; color:var(--gold); line-height:1; }
+  .event-date .m{ font-size:10px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:0.05em; }
+  .seats-tag{
+    font-size:11px; padding:4px 10px; border-radius:20px; font-family:'IBM Plex Mono',monospace;
+    background:rgba(63,191,166,0.12); color:var(--teal); border:1px solid rgba(63,191,166,0.3);
+    white-space:nowrap;
+  }
+  .seats-tag.low{ background:rgba(226,104,90,0.12); color:var(--danger); border-color:rgba(226,104,90,0.3); }
+  .event-card h3{ font-family:'Space Grotesk',sans-serif; font-size:19px; font-weight:600; }
+  .event-meta{ font-size:13px; color:var(--ink-dim); display:flex; gap:14px; flex-wrap:wrap; }
+  .event-meta span{ display:flex; align-items:center; gap:5px; }
+  .event-price{ margin-top:auto; display:flex; justify-content:space-between; align-items:center; padding-top:14px; border-top:1px dashed var(--border); }
+  .event-price .price{ font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--ink); }
+  .pill-btn{
+    background:var(--gold); color:#161421; border:none; padding:9px 18px; border-radius:20px;
+    font-weight:600; font-size:13px; transition:.15s;
+  }
+  .pill-btn:hover{ background:#f4d68a; }
+  .pill-btn.ghost{ background:transparent; color:var(--ink); border:1px solid var(--border); }
+  .pill-btn.ghost:hover{ border-color:var(--gold); color:var(--gold); }
+  .pill-btn:disabled{ opacity:0.4; cursor:not-allowed; }
+
+  /* ---------- Detail / form view ---------- */
+  .back-link{ display:inline-flex; align-items:center; gap:6px; color:var(--ink-dim); font-size:13px; margin:38px 0 20px 0; }
+  .back-link:hover{ color:var(--gold); }
+  .detail-grid{ display:grid; grid-template-columns:1.3fr 1fr; gap:28px; align-items:start; margin-bottom:70px; }
+  @media (max-width:760px){ .detail-grid{ grid-template-columns:1fr; } .hero-ticket{ grid-template-columns:1fr; } .hero-stub{ border-left:none; border-top:1px dashed var(--border); flex-direction:row; } .hero-stub::before,.hero-stub::after{ display:none; } }
+
+  .detail-card, .form-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; }
+  .detail-card h2{ font-family:'Space Grotesk',sans-serif; font-size:26px; margin-bottom:10px; }
+  .detail-card .event-meta{ margin-bottom:20px; font-size:14px; }
+  .detail-card p.desc{ color:var(--ink-dim); line-height:1.7; font-size:14.5px; margin-bottom:20px; }
+  .ticket-tiers{ display:flex; flex-direction:column; gap:10px; }
+  .tier{ display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border:1px solid var(--border); border-radius:10px; font-size:13.5px; }
+  .tier .tier-price{ font-family:'IBM Plex Mono',monospace; color:var(--gold); }
+
+  .form-card h3{ font-family:'Space Grotesk',sans-serif; font-size:18px; margin-bottom:4px; }
+  .form-card .form-sub{ font-size:12.5px; color:var(--ink-dim); margin-bottom:22px; }
+  .field{ margin-bottom:16px; }
+  .field label{ display:block; font-size:12px; color:var(--ink-dim); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.05em; }
+  .field input, .field select{
+    width:100%; background:var(--surface-2); border:1px solid var(--border); border-radius:8px;
+    padding:11px 12px; color:var(--ink); font-size:14px; font-family:inherit;
+  }
+  .field input:focus, .field select:focus{ border-color:var(--gold); }
+  .form-error{ background:rgba(226,104,90,0.1); border:1px solid rgba(226,104,90,0.35); color:var(--danger); padding:10px 12px; border-radius:8px; font-size:13px; margin-bottom:16px; display:none; }
+  .submit-row{ display:flex; justify-content:flex-end; margin-top:20px; }
+  .submit-row .pill-btn{ padding:11px 24px; font-size:14px; }
+
+  /* ---------- Confirmation ticket ---------- */
+  .ticket-wrap{ max-width:520px; margin:44px auto 70px auto; }
+  .confirm-head{ text-align:center; margin-bottom:26px; }
+  .confirm-head .stamp{
+    display:inline-block; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13px;
+    letter-spacing:0.12em; color:var(--teal); border:2px solid var(--teal); border-radius:6px;
+    padding:5px 14px; transform:rotate(-3deg); margin-bottom:14px;
+  }
+  .confirm-head h2{ font-family:'Space Grotesk',sans-serif; font-size:24px; margin-bottom:6px; }
+  .confirm-head p{ color:var(--ink-dim); font-size:14px; }
+
+  .ticket{
+    background:linear-gradient(120deg, var(--surface), var(--surface-2));
+    border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;
+    box-shadow:0 30px 60px -30px rgba(0,0,0,0.6);
+  }
+  .ticket-top{ padding:28px 28px 22px 28px; }
+  .ticket-top .t-event{ font-family:'Space Grotesk',sans-serif; font-size:21px; font-weight:600; margin-bottom:14px; }
+  .ticket-rows{ display:grid; grid-template-columns:1fr 1fr; gap:14px 20px; }
+  .ticket-rows .k{ font-size:10.5px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:0.07em; margin-bottom:3px; }
+  .ticket-rows .v{ font-family:'IBM Plex Mono',monospace; font-size:13.5px; }
+  .perforation{
+    position:relative; height:0; border-top:1px dashed var(--border); margin:0 0;
+  }
+  .perforation::before, .perforation::after{
+    content:''; position:absolute; width:22px; height:22px; border-radius:50%; background:var(--bg); top:-11px;
+  }
+  .perforation::before{ left:-11px; } .perforation::after{ right:-11px; }
+  .ticket-bottom{ padding:24px 28px 28px 28px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
+  .ticket-id{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-dim); }
+  .ticket-id b{ color:var(--gold); display:block; font-size:14px; margin-top:2px; }
+  #qrcode{ background:#fff; padding:8px; border-radius:8px; line-height:0; }
+  .ticket-actions{ display:flex; gap:10px; justify-content:center; margin-top:26px; }
+
+  /* ---------- Lookup ---------- */
+  .lookup-box{ max-width:480px; margin:50px auto 30px auto; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:30px; }
+  .lookup-box h3{ font-family:'Space Grotesk',sans-serif; font-size:19px; margin-bottom:6px; }
+  .lookup-box p{ color:var(--ink-dim); font-size:13.5px; margin-bottom:18px; }
+  .lookup-row{ display:flex; gap:10px; }
+  .lookup-row input{ flex:1; background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:11px 12px; color:var(--ink); font-size:14px; }
+  .results-list{ margin-top:24px; display:flex; flex-direction:column; gap:12px; }
+  .result-row{ display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); border:1px solid var(--border); padding:14px 16px; border-radius:10px; font-size:13.5px; }
+  .result-row .rr-name{ font-family:'Space Grotesk',sans-serif; font-weight:600; }
+  .result-row .rr-meta{ color:var(--ink-dim); font-size:12px; margin-top:2px; }
+  .empty-note{ text-align:center; color:var(--ink-dim); font-size:13.5px; padding:20px 0; }
+
+  /* ---------- Admin ---------- */
+  .admin-table{ width:100%; border-collapse:collapse; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin-bottom:60px; }
+  .admin-table th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-dim); padding:12px 16px; border-bottom:1px solid var(--border); background:var(--surface-2); }
+  .admin-table td{ padding:13px 16px; border-bottom:1px solid var(--border); font-size:13.5px; }
+  .admin-table tr:last-child td{ border-bottom:none; }
+  .status-chip{ font-size:11px; padding:3px 9px; border-radius:20px; font-family:'IBM Plex Mono',monospace; background:rgba(63,191,166,0.12); color:var(--teal); }
+
+  .banner{
+    font-size:12.5px; color:var(--ink-dim); background:var(--surface); border:1px solid var(--border);
+    border-radius:10px; padding:12px 16px; margin:26px 0; display:flex; gap:10px; align-items:flex-start;
+  }
+  .banner b{ color:var(--gold); }
+
+  .view{ display:none; }
+  .view.active{ display:block; }
+  footer{ text-align:center; padding:40px 6vw 0 6vw; color:var(--ink-dim); font-size:12px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">01</div>
+    <div>
+      <div class="brand-name">Othniel's Ticketing System</div>
+      <div class="brand-sub">Serverless Event Registration</div>
+    </div>
+  </div>
+  <nav>
+    <button class="nav-btn active" data-view="events">Events</button>
+    <button class="nav-btn" data-view="lookup">My Tickets</button>
+    <button class="nav-btn" data-view="admin">Admin</button>
+  </nav>
+</div>
+
+<main>
+
+  <!-- EVENTS VIEW -->
+  <section id="view-events" class="view active">
+    <div class="hero">
+      <div class="hero-ticket">
+        <div class="hero-main">
+          <span class="eyebrow">Othniel's AWS Serverless Event Registration & Ticketing System &middot; Capstone Project</span>
+          <h1>Register once. <br>Skip the spreadsheet.</h1>
+          <p>A REST API on API Gateway, Lambda, and DynamoDB replaces the old Forms-and-Excel workflow &mdash; instant confirmations, live seat counts, no manual reconciliation.</p>
+        </div>
+        <div class="hero-stub">
+          <span class="stub-num">NO. 01</span>
+          <span class="stub-big" id="hero-count">--</span>
+          <span class="stub-label">Open Events</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="api-banner" class="banner" style="display:none;">
+      <span>&#9432;</span>
+      <span><b>Demo data.</b> Set <span class="mono">API_BASE_URL</span> in the script to connect your API Gateway endpoint &mdash; the page falls back to sample events when the API isn't reachable.</span>
+    </div>
+
+    <div class="section-head">
+      <h2>Upcoming events</h2>
+      <span id="events-count-label"></span>
+    </div>
+    <div class="events-grid" id="events-grid"></div>
+  </section>
+
+  <!-- DETAIL / REGISTER VIEW -->
+  <section id="view-detail" class="view">
+    <a href="#" class="back-link" data-view="events">&larr; Back to events</a>
+    <div class="detail-grid" id="detail-grid"></div>
+  </section>
+
+  <!-- CONFIRMATION VIEW -->
+  <section id="view-confirm" class="view">
+    <div class="ticket-wrap" id="ticket-wrap"></div>
+  </section>
+
+  <!-- LOOKUP VIEW -->
+  <section id="view-lookup" class="view">
+    <div class="lookup-box">
+      <h3>Find your tickets</h3>
+      <p>Enter the email you registered with to pull up your registrations.</p>
+      <div class="lookup-row">
+        <input type="email" id="lookup-email" placeholder="you@example.com">
+        <button class="pill-btn" id="lookup-btn">Search</button>
+      </div>
+      <div class="results-list" id="lookup-results"></div>
+    </div>
+  </section>
+
+  <!-- ADMIN VIEW -->
+  <section id="view-admin" class="view">
+    <div class="section-head" style="margin-top:38px;">
+      <h2>All registrations</h2>
+      <span class="mono" id="admin-count-label"></span>
+    </div>
+    <table class="admin-table">
+      <thead>
+        <tr><th>Name</th><th>Email</th><th>Event</th><th>Tier</th><th>Reg. ID</th><th>Status</th></tr>
+      </thead>
+      <tbody id="admin-body"></tbody>
+    </table>
+  </section>
+
+</main>
+
+<footer>Built for Othniel-coder AWS Cloud &amp; DevOps capstone &middot; othniel-coder</footer>
+
+<script>
+/* =========================================================
+   CONFIG
+   Point this at your API Gateway invoke URL, e.g.:
+   "https://7a251kvcva.execute-api.us-east-1.amazonaws.com/prod"
+   Expected REST contract:
+     GET  /events                 -> [{ eventId, name, date, venue, tiers:[{name,price}], seatsTotal, seatsTaken }]
+     GET  /events/{id}            -> single event
+     POST /registrations          -> { name, email, phone, eventId, tier } => { registrationId, ... }
+     GET  /registrations?email=x  -> [ registration, ... ]
+     GET  /registrations          -> [ registration, ... ]  (admin, all)
+   When API_BASE_URL is empty or unreachable, the page uses local mock data
+   so it stays demo-ready before the backend is deployed.
+========================================================= */
+const API_BASE_URL = "https://7a251kvcva.execute-api.us-east-1.amazonaws.com/prod"; 
+const MOCK_EVENTS = [
+  { eventId:"evt-101", name:"AWS Cloud Practitioner Bootcamp", date:"2026-09-12", venue:"Kumasi Tech Hub, Rm 4", tiers:[{name:"Standard",price:0},{name:"With Cert Voucher",price:150}], seatsTotal:60, seatsTaken:47, desc:"A one-day intensive covering the AWS Shared Responsibility Model, core services, and exam-ready practice questions, capped off with a hands-on EC2 + S3 lab." },
+  { eventId:"evt-102", name:"Serverless Architecture Demo Day", date:"2026-09-26", venue:"Azubi Africa Campus, Auditorium", tiers:[{name:"Attendee",price:0}], seatsTotal:120, seatsTaken:118, desc:"Cohort teams present their serverless capstones &mdash; API Gateway, Lambda, DynamoDB, and CI/CD pipelines, judged live by mentors." },
+  { eventId:"evt-103", name:"DevOps CI/CD Deep Dive", date:"2026-10-03", venue:"Online &mdash; Zoom", tiers:[{name:"General",price:0},{name:"Workshop Add-on",price:60}], seatsTotal:200, seatsTaken:52, desc:"GitHub Actions from first workflow to multi-environment deploys, with a live walkthrough of a Lambda pipeline going from commit to CloudWatch alarm." },
+  { eventId:"evt-104", name:"Cloud Networking Fundamentals", date:"2026-10-18", venue:"Kumasi Tech Hub, Rm 2", tiers:[{name:"Standard",price:0}], seatsTotal:40, seatsTaken:9, desc:"VPCs, subnets, routing, and security groups explained through a build-along lab, from a blank VPC to a working two-tier app." },
+];
+
+let STATE = {
+  events: [],
+  registrations: [], // local session cache of ones we've created
+  currentEvent: null,
+  usingMock: false,
+};
+
+/* ---------------- API helpers with mock fallback ---------------- */
+async function apiFetch(path, opts={}) {
+  if (!API_BASE_URL) throw new Error("no-api-configured");
+  const res = await fetch(API_BASE_URL + path, {
+    headers: { "Content-Type": "application/json" },
+    ...opts,
+  });
+  if (!res.ok) throw new Error("api-error-" + res.status);
+  return res.json();
+}
+
+async function loadEvents() {
+  try {
+    const data = await apiFetch("/events");
+    STATE.events = data;
+    STATE.usingMock = false;
+  } catch (e) {
+    STATE.events = JSON.parse(JSON.stringify(MOCK_EVENTS));
+    STATE.usingMock = true;
+    document.getElementById("api-banner").style.display = "flex";
+  }
+}
+
+async function submitRegistration(payload) {
+  try {
+    return await apiFetch("/registrations", { method:"POST", body: JSON.stringify(payload) });
+  } catch (e) {
+    // mock: create a local registration
+    const reg = {
+      registrationId: "REG-" + Math.random().toString(36).slice(2,8).toUpperCase(),
+      ...payload,
+      status: "CONFIRMED",
+      createdAt: new Date().toISOString(),
+    };
+    STATE.registrations.push(reg);
+    const ev = STATE.events.find(e => e.eventId === payload.eventId);
+    if (ev) ev.seatsTaken = Math.min(ev.seatsTotal, (ev.seatsTaken||0) + 1);
+    return reg;
+  }
+}
+
+async function lookupByEmail(email) {
+  try {
+    return await apiFetch("/registrations?email=" + encodeURIComponent(email));
+  } catch (e) {
+    return STATE.registrations.filter(r => r.email.toLowerCase() === email.toLowerCase());
+  }
+}
+
+async function loadAllRegistrations() {
+  try {
+    return await apiFetch("/registrations");
+  } catch (e) {
+    return STATE.registrations;
+  }
+}
+
+/* ---------------- View switching ---------------- */
+function showView(name) {
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.getElementById("view-" + name).classList.add("active");
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.view === name));
+  window.scrollTo({ top:0, behavior:"instant" });
+  if (name === "admin") renderAdmin();
+}
+
+document.querySelectorAll("[data-view]").forEach(el => {
+  el.addEventListener("click", (e) => {
+    e.preventDefault();
+    showView(el.dataset.view);
+  });
+});
+
+/* ---------------- Formatting helpers ---------------- */
+function fmtDate(iso) {
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString("en-US", { day:"numeric", month:"short", year:"numeric" });
+}
+function fmtDateParts(iso) {
+  const d = new Date(iso + "T00:00:00");
+  return { d: d.getDate(), m: d.toLocaleDateString("en-US",{month:"short"}).toUpperCase() };
+}
+function seatsLeft(ev){ return Math.max(0, ev.seatsTotal - ev.seatsTaken); }
+function priceLabel(tiers){
+  const min = Math.min(...tiers.map(t=>t.price));
+  return min === 0 ? "Free" : "From GHS " + min;
+}
+
+/* ---------------- Render: Events grid ---------------- */
+function renderEvents() {
+  const grid = document.getElementById("events-grid");
+  grid.innerHTML = "";
+  document.getElementById("hero-count").textContent = STATE.events.length;
+  document.getElementById("events-count-label").textContent = STATE.events.length + " listed";
+
+  STATE.events.forEach(ev => {
+    const left = seatsLeft(ev);
+    const parts = fmtDateParts(ev.date);
+    const card = document.createElement("div");
+    card.className = "event-card";
+    card.innerHTML = `
+      <div class="event-top">
+        <div class="event-date"><div class="d">${parts.d}</div><div class="m">${parts.m}</div></div>
+        <span class="seats-tag ${left <= 5 ? 'low' : ''}">${left <= 0 ? 'Full' : left + ' seats left'}</span>
+      </div>
+      <h3>${ev.name}</h3>
+      <div class="event-meta"><span>&#128205; ${ev.venue}</span></div>
+      <div class="event-price">
+        <span class="price">${priceLabel(ev.tiers)}</span>
+        <button class="pill-btn" ${left<=0 ? 'disabled' : ''} data-open="${ev.eventId}">${left<=0 ? 'Sold out' : 'View & Register'}</button>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  grid.querySelectorAll("[data-open]").forEach(btn => {
+    btn.addEventListener("click", () => openEvent(btn.dataset.open));
+  });
+  grid.querySelectorAll(".event-card").forEach((card, i) => {
+    card.addEventListener("click", (e) => {
+      if (e.target.closest("button")) return;
+      openEvent(STATE.events[i].eventId);
+    });
+  });
+}
+
+/* ---------------- Render: Detail + registration form ---------------- */
+function openEvent(eventId) {
+  const ev = STATE.events.find(e => e.eventId === eventId);
+  if (!ev) return;
+  STATE.currentEvent = ev;
+  const left = seatsLeft(ev);
+  const grid = document.getElementById("detail-grid");
+  grid.innerHTML = `
+    <div class="detail-card">
+      <h2>${ev.name}</h2>
+      <div class="event-meta">
+        <span>&#128197; ${fmtDate(ev.date)}</span>
+        <span>&#128205; ${ev.venue}</span>
+        <span>&#127915; ${left} of ${ev.seatsTotal} seats open</span>
+      </div>
+      <p class="desc">${ev.desc || ""}</p>
+      <div class="ticket-tiers">
+        ${ev.tiers.map(t => `<div class="tier"><span>${t.name}</span><span class="tier-price">${t.price === 0 ? 'Free' : 'GHS ' + t.price}</span></div>`).join("")}
+      </div>
+    </div>
+    <div class="form-card">
+      <h3>Register for this event</h3>
+      <div class="form-sub">Confirmation and ticket are generated instantly.</div>
+      <div class="form-error" id="form-error"></div>
+      <form id="reg-form">
+        <div class="field"><label>Full name</label><input type="text" id="f-name" required></div>
+        <div class="field"><label>Email</label><input type="email" id="f-email" required></div>
+        <div class="field"><label>Phone</label><input type="tel" id="f-phone" placeholder="+233"></div>
+        <div class="field">
+          <label>Ticket tier</label>
+          <select id="f-tier">
+            ${ev.tiers.map(t => `<option value="${t.name}">${t.name} &mdash; ${t.price === 0 ? 'Free' : 'GHS ' + t.price}</option>`).join("")}
+          </select>
+        </div>
+        <div class="submit-row">
+          <button type="submit" class="pill-btn" ${left<=0 ? 'disabled' : ''}>${left<=0 ? 'Sold out' : 'Confirm registration'}</button>
+        </div>
+      </form>
+    </div>
+  `;
+  document.getElementById("reg-form").addEventListener("submit", handleRegister);
+  showView("detail");
+}
+
+async function handleRegister(e) {
+  e.preventDefault();
+  const errBox = document.getElementById("form-error");
+  errBox.style.display = "none";
+  const name = document.getElementById("f-name").value.trim();
+  const email = document.getElementById("f-email").value.trim();
+  const phone = document.getElementById("f-phone").value.trim();
+  const tier = document.getElementById("f-tier").value;
+
+  if (!name || !email) {
+    errBox.textContent = "Name and email are required.";
+    errBox.style.display = "block";
+    return;
+  }
+
+  const submitBtn = e.target.querySelector("button[type=submit]");
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Submitting\u2026";
+
+  try {
+    const reg = await submitRegistration({
+      name, email, phone, tier,
+      eventId: STATE.currentEvent.eventId,
+      eventName: STATE.currentEvent.name,
+      eventDate: STATE.currentEvent.date,
+      eventVenue: STATE.currentEvent.venue,
+    });
+    renderConfirmation(reg);
+    renderEvents();
+    showView("confirm");
+  } catch (err) {
+    errBox.textContent = "Something went wrong submitting your registration. Please try again.";
+    errBox.style.display = "block";
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Confirm registration";
+  }
+}
+
+/* ---------------- Render: Confirmation ticket ---------------- */
+function renderConfirmation(reg) {
+  const wrap = document.getElementById("ticket-wrap");
+  wrap.innerHTML = `
+    <div class="confirm-head">
+      <span class="stamp">CONFIRMED</span>
+      <h2>You're on the list, ${reg.name.split(" ")[0]}.</h2>
+      <p>A copy of this ticket has been sent to ${reg.email}.</p>
+    </div>
+    <div class="ticket">
+      <div class="ticket-top">
+        <div class="t-event">${reg.eventName}</div>
+        <div class="ticket-rows">
+          <div><div class="k">Date</div><div class="v">${fmtDate(reg.eventDate)}</div></div>
+          <div><div class="k">Venue</div><div class="v">${reg.eventVenue}</div></div>
+          <div><div class="k">Attendee</div><div class="v">${reg.name}</div></div>
+          <div><div class="k">Tier</div><div class="v">${reg.tier}</div></div>
+        </div>
+      </div>
+      <div class="perforation"></div>
+      <div class="ticket-bottom">
+        <div class="ticket-id">Registration ID<b>${reg.registrationId}</b></div>
+        <div id="qrcode"></div>
+      </div>
+    </div>
+    <div class="ticket-actions">
+      <button class="pill-btn ghost" onclick="showView('events')">Back to events</button>
+      <button class="pill-btn" onclick="window.print()">Print / Save ticket</button>
+    </div>
+  `;
+  const qrEl = document.getElementById("qrcode");
+  qrEl.innerHTML = "";
+  new QRCode(qrEl, { text: reg.registrationId, width:88, height:88, colorDark:"#0F1220", colorLight:"#ffffff" });
+}
+
+/* ---------------- Render: Lookup ---------------- */
+document.getElementById("lookup-btn").addEventListener("click", async () => {
+  const email = document.getElementById("lookup-email").value.trim();
+  const results = document.getElementById("lookup-results");
+  if (!email) { results.innerHTML = `<div class="empty-note">Enter an email to search.</div>`; return; }
+  results.innerHTML = `<div class="empty-note">Searching&hellip;</div>`;
+  const regs = await lookupByEmail(email);
+  if (!regs.length) {
+    results.innerHTML = `<div class="empty-note">No registrations found for that email.</div>`;
+    return;
+  }
+  results.innerHTML = regs.map(r => `
+    <div class="result-row">
+      <div>
+        <div class="rr-name">${r.eventName || r.eventId}</div>
+        <div class="rr-meta">${r.registrationId} &middot; ${r.tier || ''}</div>
+      </div>
+      <span class="status-chip">${r.status || 'CONFIRMED'}</span>
+    </div>
+  `).join("");
+});
+
+/* ---------------- Render: Admin ---------------- */
+async function renderAdmin() {
+  const body = document.getElementById("admin-body");
+  body.innerHTML = `<tr><td colspan="6" class="empty-note">Loading&hellip;</td></tr>`;
+  const regs = await loadAllRegistrations();
+  document.getElementById("admin-count-label").textContent = regs.length + " total";
+  if (!regs.length) {
+    body.innerHTML = `<tr><td colspan="6" class="empty-note">No registrations yet &mdash; they'll appear here as people sign up.</td></tr>`;
+    return;
+  }
+  body.innerHTML = regs.map(r => `
+    <tr>
+      <td>${r.name}</td>
+      <td>${r.email}</td>
+      <td>${r.eventName || r.eventId}</td>
+      <td>${r.tier || '-'}</td>
+      <td class="mono">${r.registrationId}</td>
+      <td><span class="status-chip">${r.status || 'CONFIRMED'}</span></td>
+    </tr>
+  `).join("");
+}
+
+/* ---------------- Init ---------------- */
+(async function init(){
+  await loadEvents();
+  renderEvents();
+})();
+</script>
+</body>
+</html>
