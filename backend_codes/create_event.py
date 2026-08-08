@@ -53,7 +53,9 @@ def lambda_handler(event, context):
             ConditionExpression="seatsTaken < seatsTotal",
             ExpressionAttributeValues={":inc": 1},
         )
-
+        reg["eventName"] = ev["name"]
+        reg["eventDate"] = ev["date"]
+        reg["eventVenue"] = ev["venue"]
         return response(201, reg)
 
     except events_table.meta.client.exceptions.ConditionalCheckFailedException:
