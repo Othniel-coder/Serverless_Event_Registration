@@ -1,5 +1,7 @@
 # Othniel's Serverless Event Registration & Ticketing
 
+# S3 Bucket URL (Application Link): http://othniel-capstone-project-082026.s3-website-us-east-1.amazonaws.com/
+
 A fully serverless event registration and ticketing web application hosted on AWS, with automated CI/CD deployment via GitHub Actions.
 
 ---
@@ -39,7 +41,7 @@ AWS Lambda (Business Logic)
      ├──▶ Amazon DynamoDB (Event & Registration Data)
      ├──▶ Amazon SNS (Email/SMS Notifications)
      └──▶ Amazon CloudWatch (Logging & Monitoring)
-```
+```  
 
 ---
 
@@ -52,7 +54,7 @@ AWS Lambda (Business Logic)
 | **DynamoDB** | Stores event data and user registrations |
 | **SNS** | Sends confirmation notifications to registered users |
 | **CloudWatch** | Monitors Lambda executions and logs errors |
-
+| **AWS Budget** | AWS tracks your actual and forecasted costs against that amount |
 ---
 
 ## Project Structure
